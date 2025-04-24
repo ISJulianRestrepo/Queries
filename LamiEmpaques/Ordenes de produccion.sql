@@ -38,11 +38,10 @@ FROM [dbo].[t125_mc_items_criterios] t125
     ON f105_id_cia=f106_id_cia
         AND f105_id= f106_id_plan
 WHERE f125_id_plan in('007', '008')
-
 ------------COMPLETO:
 
 
-SELECT DISTINCT v851_rowid_item_ext_op,
+SELECT DISTINCT
     T850.f850_id_tipo_docto AS Type_docto
 	, T850.f850_consec_docto AS workOrderId
     , LTRIM(v121_op.v121_referencia) AS productId
@@ -56,7 +55,7 @@ SELECT DISTINCT v851_rowid_item_ext_op,
     END AS status
 	, v851.v851_id_unidad_medida AS unit
     --,v121_op.v121_id_unidad_empaque AS pickingUnit
-    , t122_cajas.f122_factor AS pickingUnit
+    , ISNULL(t122_cajas.f122_factor, 1) AS pickingUnit
     -- ,1 AS pickingUnit
     , T122.f122_peso AS weight 
 	, T809.f809_numero_operacion AS operationFase
@@ -80,7 +79,7 @@ SELECT DISTINCT v851_rowid_item_ext_op,
 	     , CASE 
          WHEN f809_descripcion LIKE '%TERMOFOR%' THEN 0
 	 	WHEN f809_descripcion LIKE '%EXT%' THEN 1
-	 	ELSE NULL
+	 	ELSE 1
      END AS timeFactor
 	, t150_a.f150_id AS store
 	, CASE 
@@ -94,52 +93,25 @@ SELECT DISTINCT v851_rowid_item_ext_op,
 	 	ELSE ''
      END AS Ancho
 	, f809_numero_operarios AS Operarios
-	, T809.f809_rowid_ctrabajo AS t809_mf_centros_trabajo
-
---  ,T200.f200_nit AS customerOrders
---  ,v121_op.v121_notas_item AS notesItem
---  ,v121_op.v121_ind_lote AS lote
---  ,CASE 
---      WHEN v121_op.v121_ind_lote_asignacion = 1 THEN 'Manual'
---      ELSE 'Automatico'
---  END AS asignacionLote
---  ,v121_op.v121_vida_util AS vidaUtil
-
-
 FROM t850_mf_op_docto t850
     INNER JOIN v851
     ON v851_rowid_op_docto = t850.f850_rowid AND v851.v851_cant_planeada_base > 0
     INNER JOIN v121 v121_op
     ON v121_op.v121_rowid_item_ext = v851_rowid_item_ext_op
-    -- INNER JOIN t101_mc_unidades_medida t101_op
-    --     ON t101_op.f101_id_cia = v851_id_cia
-    --         AND t101_op.f101_id = v851_id_unidad_medida
-    -- INNER JOIN v855
-    --     ON v855_rowid_op_docto_item = v851_rowid
-    --         AND Isnull(v855_rowid_op_docto_item_otros, 0) = Isnull(v851_rowid_op_docto_item_otros, 0)
-    -- INNER JOIN t285_co_centro_op
-    --     ON f285_id_cia = t850.f850_id_cia
-    --         AND f285_id = t850.f850_id_co
-    -- INNER JOIN t200_mm_terceros T200 
-    -- 	ON T200.f200_rowid = T850.f850_rowid_tercero_planif
-    -- LEFT JOIN v121 v121_otro
-    --     ON v121_otro.v121_rowid_item_ext = v851_rowid_item_ext_otros
     LEFT JOIN t150_mc_bodegas t150_a
     ON t150_a.f150_rowid = v851_rowid_bodega
-    -- LEFT JOIN t150_mc_bodegas t150_b
-    --     ON t150_b.f150_rowid = v851_rowid_bodega_componentes
     INNER JOIN t122_mc_items_unidades t122
     ON t122.f122_rowid_item = v121_op.v121_rowid_item
         AND t122.f122_id_unidad = v851_id_unidad_medida
     LEFT JOIN t122_mc_items_unidades t122_cajas
     ON t122_cajas.f122_rowid_item = v121_op.v121_rowid_item
-        AND t122_cajas. f122_id_unidad='CAJ'
-    -- INNER JOIN t865_mf_op_operaciones T865 
-    -- 	ON T865.f865_rowid_op_docto_item = v851.v851_rowid
-    INNER JOIN t809_mf_rutas_operacion T809
-    ON v851.v851_rowid_ruta = T809.f809_rowid
+        AND t122_cajas. f122_id_unidad !='UNID'
     INNER JOIN t808_mf_rutas  AS t808
-    ON t808.f808_rowid = t809.f809_rowid_rutas
+    ON t808.f808_rowid = v851.v851_rowid_ruta
+
+
+    INNER JOIN t809_mf_rutas_operacion AS T809
+    ON f809_rowid_rutas = t808.f808_rowid AND f809_id_metodo = v851_id_metodo_ruta
     INNER JOIN t806_mf_centros_trabajo AS T806
     ON T809.f809_rowid_ctrabajo = T806.f806_rowid
     LEFT JOIN t810_mf_rutas_operacion_instru T810C
@@ -168,18 +140,14 @@ WHERE  t850.f850_id_cia = 1
     AND T850.f850_id_tipo_docto IN ('MOP', 'MOE')
     AND LEFT(f809_descripcion,12) NOT IN ('CAMBIO DE RE',
 											'MONTAJE Y DE',
-											'PUESTA A PUNTO',
-											'CAMBIO DE RO')
---AND f850_consec_docto = 8572
+											'PUESTA A PUN',
+											'CAMBIO DE RO',
+                                            'REVISION Y E')
+--AND f850_consec_docto = 8794 
 DROP TABLE #TempValoresPorRuta
 DROP TABLE #TempCalibres_Anchos
 
 -- use unoee_pruebas
-
-
-
-
-
 
 
 -- exec sp_help v121_rowid_item_ext
