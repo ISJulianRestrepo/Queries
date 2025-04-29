@@ -143,7 +143,11 @@ WHERE  t850.f850_id_cia = 1
 											'PUESTA A PUN',
 											'CAMBIO DE RO',
                                             'REVISION Y E')
---AND f850_consec_docto = 8794 
+    --Omitir si el código item de la op es igual a 0001657
+    AND v121_op.v121_referencia NOT LIKE '%11657%'
+    --Omitir cuando el código de la ruta invocada en la orden de producción comienza por “ensamb”
+    AND LTRIM(T806.f806_id) NOT LIKE '%ensamb%'
+--AND f850_consec_docto = 8698  
 DROP TABLE #TempValoresPorRuta
 DROP TABLE #TempCalibres_Anchos
 
