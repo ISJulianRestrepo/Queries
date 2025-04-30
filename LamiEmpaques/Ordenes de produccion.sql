@@ -138,15 +138,15 @@ WHERE  t850.f850_id_cia = 1
     AND t850.f850_id_grupo_clase_docto = 701
     AND t850.f850_ind_estado IN ( 1, 2 )
     AND T850.f850_id_tipo_docto IN ('MOP', 'MOE')
-    AND LEFT(f809_descripcion,12) NOT IN ('CAMBIO DE RE',
-											'MONTAJE Y DE',
-											'PUESTA A PUN',
-											'CAMBIO DE RO',
-                                            'REVISION Y E')
+    -- AND LEFT(f809_descripcion,12) NOT IN ('CAMBIO DE RE',
+	-- 										'MONTAJE Y DE',
+	-- 										'PUESTA A PUN',
+	-- 										'CAMBIO DE RO',
+    --                                         'REVISION Y E')
     --Omitir si el código item de la op es igual a 0001657
-    AND v121_op.v121_referencia NOT LIKE '%11657%'
+    -- AND v121_op.v121_referencia NOT LIKE '%11657%'
     --Omitir cuando el código de la ruta invocada en la orden de producción comienza por “ensamb”
-    AND LTRIM(T806.f806_id) NOT LIKE '%ensamb%'
+    -- AND LTRIM(T806.f806_id) NOT LIKE '%ensamb%'
 --AND f850_consec_docto = 8698  
 DROP TABLE #TempValoresPorRuta
 DROP TABLE #TempCalibres_Anchos
