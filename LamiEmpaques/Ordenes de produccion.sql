@@ -96,9 +96,9 @@ SELECT DISTINCT
         WHEN T850.f850_ind_estado = 2 THEN 'Comprometido'
         ELSE 'Aprobado' 
     END AS status
-	,v851.v851_id_unidad_medida AS unit
-    ,v121_op.v121_id_unidad_empaque AS pickingUnit
-    ,ISNULL(t122_cajas.f122_factor, 1) AS pickingUnit
+    , v851.v851_id_unidad_medida AS unit
+    --,v121_op.v121_id_unidad_empaque AS pickingUnit
+    , ISNULL(t122_cajas.f122_factor, 1) AS pickingUnit
     ,T122.f122_peso AS weight 
 	 ,T809.f809_numero_operacion AS operationFase
 	 ,t809.f809_descripcion AS operationName
