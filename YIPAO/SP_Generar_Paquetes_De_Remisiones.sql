@@ -16,6 +16,7 @@ BEGIN
             -- ROW_NUMBER() OVER (ORDER BY JSON_VALUE(jsonOrigen, '$.transactionType')) AS RowNum
         FROM 
             (
+                -- Agrupa los datos de remisiones
                 SELECT JSON_VALUE(jsonOrigen, '$.productName')  AS productName, 
                 JSON_VALUE(jsonOrigen, '$.transactionType')     AS transactionType, 
                 JSON_VALUE(jsonOrigen, '$.dispenserName')       AS dispenserName,
