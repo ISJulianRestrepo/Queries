@@ -82,6 +82,32 @@ FROM [dbo].[t125_mc_items_criterios] t125
 WHERE f125_id_plan in('007', '008')
 
 
+-- Tabla temporal para almacenar descripciones técnicas de los items para la ruta 0001, se almacenan los datos de:
+-- ANCHO DEL PRODUCTO CM, DE CAJAS POR PLANCHA PALLET, DE PLANCHAS POR PALLET, DE RETAL
+SELECT 
+    t123.f123_rowid_item,
+    f123_datos = STUFF((
+        SELECT 
+            ' ' + t104_sub.f104_id + ': ' + t123_sub.f123_dato + '    '
+        FROM t123_mc_items_desc_tecnicas t123_sub
+        LEFT JOIN t104_mc_desc_tecnicas_campos t104_sub
+            ON t123_sub.f123_rowid_campo = t104_sub.f104_rowid
+        WHERE 
+            t123_sub.f123_rowid_item = t123.f123_rowid_item
+            AND (
+                t104_sub.f104_id LIKE '%ANCHO DEL PRODUCTO CM%' 
+                OR t104_sub.f104_id LIKE '% DE CAJAS POR PLANCHA PALLET%'
+                OR t104_sub.f104_id LIKE '% DE PLANCHAS POR PALLET%'
+                OR t104_sub.f104_id LIKE '% DE RETAL%' 
+            )
+            AND t123_sub.f123_rowid_item IS NOT NULL
+        FOR XML PATH(''), TYPE
+    ).value('.', 'NVARCHAR(MAX)'), 1, 1, '')
+INTO #TempDesc_Tecnicas
+FROM t123_mc_items_desc_tecnicas t123
+GROUP BY t123.f123_rowid_item;
+
+
 
 ------------COMPLETO:
 SELECT DISTINCT
@@ -215,6 +241,18 @@ SELECT DISTINCT
 	 	ELSE ''
      END AS Ancho
 	,f809_numero_operarios AS Operarios
+
+    ,CASE 
+        WHEN f809_id_metodo = '0001' THEN
+            t_desc_tecnicas.f123_datos
+        WHEN f809_id_metodo != '0001' THEN
+            CASE	
+                WHEN TEMP.VALOR_ASIGNADO IS NOT NULL THEN TEMP.VALOR_ASIGNADO
+                ELSE '1'
+            END
+        ELSE '1'
+    END AS ItemReferences,v121_op.v121_rowid_item--,t104.f104_id
+
 FROM t850_mf_op_docto t850
     INNER JOIN v851
     ON v851_rowid_op_docto = t850.f850_rowid AND v851.v851_cant_planeada_base > 0
@@ -282,6 +320,11 @@ FROM t850_mf_op_docto t850
     FULL JOIN #TempValoresPorRuta temp
     ON t808.f808_id  = temp.CODIGO_RUTA
         AND t809.f809_id_metodo =  temp.CODIGO_METODO
+
+
+    LEFT JOIN #TempDesc_Tecnicas t_desc_tecnicas 
+    ON t_desc_tecnicas.f123_rowid_item = v121_op.v121_rowid_item
+
 WHERE  t850.f850_id_cia = 1
     AND t850.f850_id_grupo_clase_docto = 701
     AND t850.f850_ind_estado IN ( 1, 2 )
@@ -306,22 +349,4 @@ ORDER BY T850.f850_consec_docto, t809.f809_numero_operacion
 DROP TABLE #TempValoresPorRuta
 DROP TABLE #TempCalibres_Anchos
 DROP TABLE #TempIdOperacionesTroqueladoPorOP
-
--- use unoee_pruebas
-
-
--- exec sp_help v121_rowid_item_ext
-
--- SELECT * FROM v121 WHERE v121_rowid_item_ext=245
--- SELECT * FROM t101_mc_unidades_medida
--- SELECT * FROM t122_mc_items_unidades where f122_rowid_item in (497)
-
--- SELECT t122_cajas.f122_factor AS pickingUnit
--- FROM t122_mc_items_unidades t122_cajas
--- WHERE t122_cajas.f122_rowid_item = 497 
--- 	AND t122_cajas.f122_id_unidad = 'CAJ'
-
--- SELECT * FROM 
--- LEFT JOIN t122_mc_items_unidades t122_cajas
--- 	ON t122.f122_rowid_item = v121_op.v121_rowid_item 
--- 		AND t122_cajas. f122_id_unidad='CAJ'
+DROP TABLE #TempDesc_Tecnicas
