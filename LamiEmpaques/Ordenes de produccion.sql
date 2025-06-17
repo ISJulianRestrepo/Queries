@@ -109,6 +109,59 @@ GROUP BY t123.f123_rowid_item;
 
 
 
+--- Con el CTE DatosPreparados y la tabla temporal #TempEntidades_Items se almacenan los datos de las entidades dinámicas 
+--- de los items relacionadas con el cliente y el código que maneja el cliente para cada item.
+--- La consulta devuelve el RowId del item, el cliente y el código del cliente para cada item, con esta información se hace el JOIN en la consulta final.
+WITH DatosPreparados AS (
+    SELECT	
+        t753.f753_rowid_movto_entidad AS RowIdMvtoEntidad,
+        t743.f743_id AS Atributo,
+        t753.f753_dato_texto AS f_dato_texto,
+        t200.f200_razon_social,
+        t120.f120_rowid AS RowIdItem  -- este es el que quieres mostrar
+    FROM t753_mm_movto_entidad_columna t753
+    INNER JOIN t750_mm_movto_entidad t750
+        ON t750.f750_rowid = t753.f753_rowid_movto_entidad
+    INNER JOIN t743_mm_entidad_atributo t743
+        ON t743.f743_rowid = t753.f753_rowid_entidad_atributo
+    LEFT JOIN t739_mm_maestro_interno t739
+        ON t739.f739_id = t743.f743_id_maestro_interno
+    LEFT JOIN t744_mm_grupo_entidad t744
+        ON t750.f750_rowid_grupo_entidad = t744.f744_rowid
+    INNER JOIN t742_mm_entidad t742
+        ON t743.f743_rowid_entidad = t742.f742_rowid
+    INNER JOIN t120_mc_items t120
+        ON t120.f120_rowid_movto_entidad = t753.f753_rowid_movto_entidad
+    LEFT JOIN t200_mm_terceros t200 
+        ON t200.f200_id LIKE '%' + LEFT(t753.f753_dato_texto, 7) + '%' 
+        AND LEN(t753.f753_dato_texto) > 1
+    WHERE t744.f744_id LIKE '%INFO ITEMS%' 
+        AND t742.f742_etiqueta LIKE '%REF ALTERNA X CLIENTE%' 
+        AND LEN(t753.f753_dato_texto) > 0
+)
+
+SELECT 
+    RowIdItem,  -- ahora mostramos el ID del ítem en lugar del movimiento
+    STUFF((
+        SELECT ' | ' +
+            CASE 
+                WHEN Atributo LIKE '%REF ALTERNA CLIENTE%' THEN 'f_dato_texto: ' + f_dato_texto
+                WHEN Atributo LIKE 'CLIENTE%' THEN 'Cliente: ' + f200_razon_social
+                ELSE ''
+            END
+        FROM DatosPreparados AS D2
+        WHERE D2.RowIdItem = D1.RowIdItem
+        FOR XML PATH(''), TYPE).value('.', 'NVARCHAR(MAX)'), 1, 3, '') AS DatosConcatenados
+INTO #TempEntidades_Items
+FROM (
+    SELECT DISTINCT RowIdItem
+    FROM DatosPreparados
+) AS D1
+ORDER BY RowIdItem;
+
+
+
+
 ------------COMPLETO:
 SELECT DISTINCT
     T850.f850_id_tipo_docto AS Type_docto
@@ -251,7 +304,7 @@ SELECT DISTINCT
                 ELSE '1'
             END
         ELSE '1'
-    END AS ItemReferences,v121_op.v121_rowid_item--,t104.f104_id
+    END AS ItemReferences,v121_op.v121_rowid_item, t_entidades.DatosConcatenados--,t104.f104_id, 
 
 FROM t850_mf_op_docto t850
     INNER JOIN v851
@@ -325,14 +378,17 @@ FROM t850_mf_op_docto t850
     LEFT JOIN #TempDesc_Tecnicas t_desc_tecnicas 
     ON t_desc_tecnicas.f123_rowid_item = v121_op.v121_rowid_item
 
+    LEFT JOIN #TempEntidades_Items t_entidades
+    ON t_entidades.RowIdItem = v121_op.v121_rowid_item
+
 WHERE  t850.f850_id_cia = 1
-    AND t850.f850_id_grupo_clase_docto = 701
+    -----AND t850.f850_id_grupo_clase_docto = 701
     AND t850.f850_ind_estado IN ( 1, 2 )
-    AND T850.f850_id_tipo_docto IN ('MOP', 'MOE')
+    -----AND T850.f850_id_tipo_docto IN ('MOP', 'MOE')
     --Excluir las operaciones iniciadas por CAMBIO
-    AND t809.f809_descripcion NOT LIKE 'CAMBIO%'
+   ----- AND t809.f809_descripcion NOT LIKE 'CAMBIO%'
     --Excluir el centro de trabajo que inicie por SMED
-    AND LTRIM(T806.f806_id) NOT LIKE 'SMED%'
+  -----  AND LTRIM(T806.f806_id) NOT LIKE 'SMED%'
     -- AND LEFT(f809_descripcion,12) NOT IN ('CAMBIO DE RE',
 	-- 										'MONTAJE Y DE',
 	-- 										'PUESTA A PUN',
@@ -350,3 +406,5 @@ DROP TABLE #TempValoresPorRuta
 DROP TABLE #TempCalibres_Anchos
 DROP TABLE #TempIdOperacionesTroqueladoPorOP
 DROP TABLE #TempDesc_Tecnicas
+DROP TABLE #TempEntidades_Items
+USE UnoEE_Pruebas;
