@@ -382,13 +382,13 @@ FROM t850_mf_op_docto t850
     ON t_entidades.RowIdItem = v121_op.v121_rowid_item
 
 WHERE  t850.f850_id_cia = 1
-    -----AND t850.f850_id_grupo_clase_docto = 701
+    AND t850.f850_id_grupo_clase_docto = 701
     AND t850.f850_ind_estado IN ( 1, 2 )
-    -----AND T850.f850_id_tipo_docto IN ('MOP', 'MOE')
+    AND T850.f850_id_tipo_docto IN ('MOP', 'MOE')
     --Excluir las operaciones iniciadas por CAMBIO
-   ----- AND t809.f809_descripcion NOT LIKE 'CAMBIO%'
+    AND t809.f809_descripcion NOT LIKE 'CAMBIO%'
     --Excluir el centro de trabajo que inicie por SMED
-  -----  AND LTRIM(T806.f806_id) NOT LIKE 'SMED%'
+    AND LTRIM(T806.f806_id) NOT LIKE 'SMED%'
     -- AND LEFT(f809_descripcion,12) NOT IN ('CAMBIO DE RE',
 	-- 										'MONTAJE Y DE',
 	-- 										'PUESTA A PUN',
