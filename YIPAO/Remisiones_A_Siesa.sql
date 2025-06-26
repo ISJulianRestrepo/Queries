@@ -1,14 +1,9 @@
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
---DELETE FROM REMISIONES
-CREATE PROCEDURE [dbo].[Remisiones_A_Siesa] 
+CREATE PROCEDURE [dbo].[Remisiones_A_Siesa]-- '9999999999999'
 	@row_id varchar(50)
 AS
 BEGIN
 	DELETE FROM Remisiones 
-	WHERE fechaRegistro < DATEADD(DAY, -5, GETDATE()) OR estado=2 OR JSON_VALUE(jsonOrigen, '$.productName') = 'DESCONOCIDO SNACK'
+	WHERE  estado=2 OR JSON_VALUE(jsonOrigen, '$.productName') LIKE '%DESCONOCIDO%'
 	SELECT --TOP 1
 	 
 		m.Referencia,
@@ -16,13 +11,13 @@ BEGIN
 		---------------------
 
 		JSON_VALUE(jsonOrigen, '$.transactionId')											AS transactionId,
-		JSON_VALUE(jsonOrigen, '$.date')													AS date,
 		JSON_VALUE(jsonOrigen, '$.operationName')											AS operationName,
 		JSON_VALUE(jsonOrigen, '$.serialMachine')											AS serialMachine,
 		JSON_VALUE(jsonOrigen, '$.dispenserName')											AS dispenserName,
 		JSON_VALUE(jsonOrigen, '$.selection')												AS selection,
 		JSON_VALUE(jsonOrigen, '$.productName')												AS productName,
 		JSON_VALUE(jsonOrigen, '$.value')													AS value,
+		JSON_VALUE(jsonOrigen, '$.cost')													AS cost,
 		JSON_VALUE(jsonOrigen, '$.transactionType')											AS transactionType,
 		
 		CASE JSON_VALUE(jsonOrigen, '$.transactionType')
@@ -120,18 +115,19 @@ BEGIN
 	---MovtoVentasComercial
 	SELECT DISTINCT
 	'MovtoVentasComercial'																AS 'NombreSeccion',
-	co																				AS 'f470_id_co',
+	co																					AS 'f470_id_co',
     'RM'																				AS 'f470_id_tipo_docto',
     r.F350_CONSEC_DOCTO																	AS 'f470_consec_docto',
     ROW_NUMBER() OVER (PARTITION BY r.F350_CONSEC_DOCTO ORDER BY r.F350_CONSEC_DOCTO)	AS 'f470_nro_registro',	
-    Bodega_Item																					AS 'f470_id_bodega',
+    Bodega_Item																			AS 'f470_id_bodega',
     Ubicacion																			AS 'f470_id_ubicacion_aux',
     '01'																				AS 'f470_id_motivo',
     Co_Item																				AS 'f470_id_co_movto',
     '3001'																				AS 'f470_id_ccosto_movto',
     unidad_medida																		AS 'f470_id_unidad_medida',
-    1																					AS 'f470_cant_base',
-    value																				AS 'f470_vlr_bruto',
+    -- 1																					AS 'f470_cant_base',
+    COUNT(*)																			AS 'f470_cant_base',
+    cost * COUNT(*)																		AS 'f470_vlr_bruto',
     ''																					AS 'f470_notas',
     CASE productName
 		WHEN 'TORTA' THEN 'TORTA MÁQUINAS' 
@@ -143,6 +139,19 @@ BEGIN
 	FROM #TemDoctos d
 	INNER JOIN #TemRemision r ON d.transactionId IN (SELECT value FROM STRING_SPLIT(r.id, '|'))
 	WHERE paquete = @row_id
+	GROUP BY 
+		co,
+		Bodega_Item,
+		Ubicacion,		
+		f470_id_co_movto,
+		f470_id_ccosto_movto,
+		unidad_medida,
+		cost,
+		productName,
+		Bodega_Item,
+		Ubicacion,
+		Co_Item,
+		r.F350_CONSEC_DOCTO
 	ORDER BY F350_CONSEC_DOCTO, f470_nro_registro
 
 	DROP TABLE #TemDoctos
