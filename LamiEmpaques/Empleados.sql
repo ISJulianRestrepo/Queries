@@ -11,5 +11,6 @@ FROM
     t815_mf_empleados t815
     INNER JOIN t200_mm_terceros t200 ON t200.f200_rowid = t815.f815_rowid_tercero
     INNER JOIN t814_mf_categoria_laboral t814 ON t814.f814_rowid = t815.f815_rowid_categoria_laboral
-WHERE 
-    t815.f815_id_cia = 34;
+
+
+    USE UnoEE_Pruebas;
