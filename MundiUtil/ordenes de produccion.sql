@@ -32,16 +32,17 @@ SELECT
     T865.f865_numero_operacion AS operationFase,
     f809_descripcion AS operationName,
     TRIM(T806.f806_id) AS workUnitId,
+    --TRIM(T806.f806_id) AS workUnitId,
     T865.f865_rt_horas_ejecucion,
     T865.f865_rt_cantidad_base,
+	CASE 
+        WHEN t810Cavidades.f810_dato IS NULL THEN ''
+        ELSE t810Cavidades.f810_dato
+    END AS conversionFactor,
     CASE 
         WHEN t810Ciclo.f810_dato IS NULL THEN ''
         ELSE t810Ciclo.f810_dato
-    END AS conversionFactor,
-    CASE 
-        WHEN t810Cavidades.f810_dato IS NULL THEN ''
-        ELSE t810Cavidades.f810_dato
-    END AS timeFactor,
+    END AS Ciclo,
     T150.f150_id AS store,
     T850.f850_notas AS notesDocto,
     T200.f200_nit AS customerOrders,
@@ -72,11 +73,11 @@ INNER JOIN t808_mf_rutas AS T808
 INNER JOIN t809_mf_rutas_operacion T809 
     ON t851.f851_rowid_ruta = T809.f809_rowid_rutas
 INNER JOIN t806_mf_centros_trabajo AS T806 
-    ON T809.f809_rowid_ctrabajo = T806.f806_rowid
+    ON t865.f865_rowid_ctrabajo = T806.f806_rowid
 INNER JOIN t810_mf_rutas_operacion_instru t810Ciclo 
-    ON t810Ciclo.f810_rowid_ruta_oper = T809.f809_rowid AND t810Ciclo.f810_rowid_campo = 3
+    ON t810Ciclo.f810_rowid_ruta_oper = T809.f809_rowid AND t810Ciclo.f810_rowid_campo = 3 AND t851.f851_id_metodo_ruta = t809.f809_id_metodo
 INNER JOIN t810_mf_rutas_operacion_instru t810Cavidades 
-    ON t810Cavidades.f810_rowid_ruta_oper = T809.f809_rowid AND t810Cavidades.f810_rowid_campo = 4
+    ON t810Cavidades.f810_rowid_ruta_oper = T809.f809_rowid AND t810Cavidades.f810_rowid_campo = 4 AND t851.f851_id_metodo_ruta = t809.f809_id_metodo
 INNER JOIN t150_mc_bodegas T150 
     ON T150.f150_rowid = T851.f851_rowid_bodega
 INNER JOIN t200_mm_terceros T200 
@@ -87,10 +88,11 @@ INNER JOIN #CriteriosItems CILinea
     ON CILinea.row_id_item = t120.f120_rowid AND CILinea.id_plan = '001'
 INNER JOIN #CriteriosItems CIFamilia 
     ON CIFamilia.row_id_item = t120.f120_rowid AND CIFamilia.id_plan = '002'
+
 WHERE 
     T850.f850_ind_estado IN (1, 2)
     AND T850.f850_id_tipo_docto = 'MOP'
-    AND T865.f865_numero_operacion IN (120, 121)
+    AND T865.f865_numero_operacion IN (120, 121, 140)
 ORDER BY f850_consec_docto DESC;
 
 -- Eliminar tabla temporal
