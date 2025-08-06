@@ -1,0 +1,34 @@
+{
+  "Consumos": [
+    {
+      "TIPO DOC": "MCC",
+      "CONS MCC": "1",
+      "FECHA DOC": "20250623",
+      "DOC ALTERNO": "NOTAA",
+      "NOTAS DOC": "NOTAS DOC",
+      "TIPO DOC OP": "MOP",
+      "CONS OP": "8690"
+    }
+  ],
+  "Movto Inventario": [
+    {
+      "TIPO DOC": "MCC",
+      "CONS MCC": "1",
+      "NUM REGISTRO": "1",
+      "ITEM PADRE": "",
+      "REFERENCIA PADRE": "14934",
+      "EXT 1 PADRE": "",
+      "EXT 2 PADRE": "",
+      "ITEM COMP": "",
+      "REFERENCIA COMP": "07870",
+      "EXT 1 COMP": "",
+      "EXT 2 COMP": "",
+      "BODEGA": "040",
+      "UBICACION": "PISO",
+      "LOTE": "RE 614-6",
+      "UNID MED": "KGS",
+      "CANT CONSUMO": "1",
+      "NOTAS MOV": "NOTAS"
+    }
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "Documentos": [
+    {
+      "FECHA AAAAMMDD": "20250724",
+
+      "NOTAS": "pruebas",
+      "DOCUMENTO ALTERNO": "pruebas"
+    }
+  ],
+  "Movimientos": [
+    {
+      "NUMERO REGISTRO": "1",
+      "DOCUMENTO OP": "MOP",
+      "CONSECUTIVO OP": "9633",
+      "REFERENCIA": "00396",
+      "REFERENCIA COP-SUBPRODUCTO": "",
+      "CODIGO BARRAS": "",
+      "BODEGA": "041",
+      "UBICACION": "PISO",
+      "LOTE": "9633",
+      "CANTIDAD": "10000",
+      "NOTAS MOVIMIENTO": "pruebas"
+    }
+  ]
+}
+
+

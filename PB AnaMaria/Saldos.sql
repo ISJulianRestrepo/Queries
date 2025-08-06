@@ -16,28 +16,13 @@ SELECT
     t353.f353_fecha_cancelacion                                                         AS f_fecha_cancelacion,
     t353.f353_fecha_cancelacion_rec                                                     AS f_fecha_cancelacion_rec,
     t353.f353_fecha_vcto                                                                AS vencimiento,
-
-    -- f353_total_db                                  saldodb,
-    -- f353_total_cr                                  saldocr,
-    -- f353_total_db - f353_total_cr  + f353_total_ch_postf Saldototal,
-    -- f353_total_db_alt                              saldoalterno,
-    -- t1.f200_id                                     idtercero,
-    -- t1.f200_nit                                    nittercero,
-    -- t1.f200_razon_social                           razontercero,
-    -- f201_id_sucursal                               idsucursal,
-    -- f201_descripcion_sucursal                      dessucursal,
-    -- f253_id                                        idauxiliar,
-    -- f253_descripcion                               desauxiliar,
-    -- f210_id                                        idvendedor,
-    -- t2.f200_razon_social                           desvendedor,
-    -- f353_fecha_dscto_pp                            fechaprontopago,
-    -- f353_vlr_dscto_pp                              valordescuentopp,
-    -- Rtrim(f353_notas)                              notas,
-    -- f017_id                                        idmoneda,
-    -- f353_fecha_cancelacion                         fechacancelacion,
-    -- f017_dec_total                                 decimalesmoneda,
-
-    DATEDIFF(DAY, f353_fecha_vcto, ISNULL(f353_fecha_cancelacion_rec, GETDATE())) AS diasvencidos
+CASE 
+    WHEN DATEDIFF(DAY, f353_fecha_vcto, ISNULL(f353_fecha_cancelacion_rec, GETDATE())) < 0 
+    THEN 0
+    ELSE DATEDIFF(DAY, f353_fecha_vcto, ISNULL(f353_fecha_cancelacion_rec, GETDATE()))
+END AS diasvencidos,
+T208.f208_dias_vcto AS DiasCondPago,
+f353_rowid_tercero AS RowIdTercero
 INTO #TempSaldos
 FROM   t353_co_saldo_abierto t353
 LEFT OUTER JOIN t210_mm_vendedores t210
@@ -54,22 +39,109 @@ INNER JOIN t201_mm_clientes t201
 INNER JOIN t017_mm_monedas t017
     ON t017.f017_id_cia = t253.f253_id_cia
         AND t017.f017_id = t253.f253_id_moneda
-WHERE t200.f200_nit = '892300678      '
-    AND  f353_fecha > DATEADD(MONTH, -6, CAST(GETDATE() AS DATE))
+
+INNER JOIN t208_mm_condiciones_pago T208
+    ON t201.f201_id_cond_pago = T208.f208_id
+
+
+
+
+
+
+WHERE f353_fecha_cancelacion_rec > DATEADD(MONTH, -6, CAST(GETDATE() AS DATE))
+    --AND f353_fecha_cancelacion_rec>'20250101'
+    AND t353.f353_id_tipo_docto_cruce like 'FEL'
     AND f353_fecha_cancelacion_rec IS NOT NULL
 ORDER BY T200.f200_id
 
 
 				 
+SELECT IdTercero, 
+    AVG(diasvencidos) PromedioDiasVencidos, 
+    MAX(DiasCondPago) MaxDiasCondPago,
+    t201Suc.f201_id_sucursal AS IdSucursal
+FROM #TempSaldos Temp
+INNER JOIN t201_mm_clientes t201Suc
+    ON  t201Suc.f201_rowid_tercero = Temp.RowIdTercero
+        --AND t201Suc.f201_id_sucursal = f353_id_sucursal
+GROUP BY IdTercero, t201Suc.f201_id_sucursal
+ORDER BY IdTercero
 
--- select * from #TempSaldos
+DROP TABLE #TempSaldos
 
 
 
 
-SELECT IdTercero, AVG(diasvencidos) 
+
+SELECT * FROM 
+t201_mm_clientes t201Suc
+    --ON  t201Suc.f201_rowid_tercero = f353_rowid_tercero
+INNER JOIN t200_mm_terceros t200
+    ON f201_rowid_tercero = t200.f200_rowid
+where f201_rowid_tercero = 8565
+
+t200.f200_id  IN ('892300678')
+
+
+
+
+
+                  ----------------------*************************----------------------
+                -- Consulta para obtener los datos de la condición de pago de un tercero  
+
+
+SELECT 
+    t353.f353_rowid                                                                     AS rowidsa,
+    t353.f353_id_co_cruce                                                               AS idco,
+    t353.f353_id_un_cruce                                                               AS idun,
+    CONCAT(t353.f353_id_tipo_docto_cruce, '-',
+        RIGHT('00000000' + CAST(t353.f353_consec_docto_cruce AS VARCHAR(8)), 8),
+        '-',
+        RIGHT('00' + CAST(t353.f353_nro_cuota_cruce AS VARCHAR(2)), 2)
+    )                                                                                   AS doccruce,
+    t200.f200_id                                                                        AS idtercero,
+    t353.f353_fecha                                                                     AS fecha,
+    t353.f353_fecha_cancelacion                                                         AS f_fecha_cancelacion,
+    t353.f353_fecha_cancelacion_rec                                                     AS f_fecha_cancelacion_rec,
+    t353.f353_fecha_vcto                                                                AS vencimiento,
+CASE 
+    WHEN DATEDIFF(DAY, f353_fecha_vcto, ISNULL(f353_fecha_cancelacion_rec, GETDATE())) < 0 
+    THEN 0
+    ELSE DATEDIFF(DAY, f353_fecha_vcto, ISNULL(f353_fecha_cancelacion_rec, GETDATE()))
+END AS diasvencidos,
+T208.f208_dias_vcto AS DiasCondPago
+INTO #TempSaldos
+FROM   t353_co_saldo_abierto t353
+LEFT OUTER JOIN t210_mm_vendedores t210
+    ON t353.f353_rowid_vend = t210.f210_rowid_tercero
+INNER JOIN t200_mm_terceros t200
+    ON f353_rowid_tercero = t200.f200_rowid
+INNER JOIN t200_mm_terceros t2
+    ON t2.f200_rowid = f353_rowid_vend
+INNER JOIN t253_co_auxiliares t253
+    ON f353_rowid_auxiliar = t253.f253_rowid
+INNER JOIN t201_mm_clientes t201
+    ON  t201.f201_rowid_tercero = f353_rowid_tercero
+        AND t201.f201_id_sucursal = f353_id_sucursal
+INNER JOIN t017_mm_monedas t017
+    ON t017.f017_id_cia = t253.f253_id_cia
+        AND t017.f017_id = t253.f253_id_moneda
+
+INNER JOIN t208_mm_condiciones_pago T208
+    ON t201.f201_id_cond_pago = T208.f208_id
+WHERE f353_fecha_cancelacion_rec > DATEADD(MONTH, -6, CAST(GETDATE() AS DATE))
+    --AND f353_fecha_cancelacion_rec>'20250101'
+    AND t353.f353_id_tipo_docto_cruce like 'FEL'
+    AND f353_fecha_cancelacion_rec IS NOT NULL
+ORDER BY T200.f200_id
+
+
+				 
+SELECT IdTercero, 
+AVG(diasvencidos) PromedioDiasVencidos, 
+    DiasCondPago
 FROM #TempSaldos
-GROUP BY IdTercero
+GROUP BY IdTercero, DiasCondPago
 
 DROP TABLE #TempSaldos
 
@@ -78,34 +150,7 @@ DROP TABLE #TempSaldos
 
 
 
-
-
-
-
-
-
-
-
                   ----------------------*************************----------------------
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
