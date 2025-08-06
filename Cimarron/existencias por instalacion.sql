@@ -1,107 +1,116 @@
-select DISTINCT top 100 --f112_descripcion, 
-v125_rowid_item,
-    t120.f120_id,7 f_item, 
-    rtrim(t120.f120_referencia) f_referencia, 
-    rtrim(t120.f120_descripcion) f_desc_item, 
-    round(v400_cant_existencia_1 / 1, 4) f_cant_existencia_1, 
-    round(v400_cant_comprometida_1 / 1,4) f_cant_comprometida_1, 
-    round(v400_cant_existencia_1 / 1, 4) - round(v400_cant_salida_sin_conf_1 / 1,4) - round(v400_cant_comprometida_1 / 1,4) f_cant_disponible_1, 
-    cast(case 
-            when 1 = 0 then 0   
-                else 
-                case   
-                    when 0 = 0 then f132_costo_prom_uni    
-                    else 
-                    case when round(v400_cant_existencia_1 / 1, 4) = 0 then 0   
-                        else round(f132_costo_prom_uni  * v400_cant_existencia_1,2) / round(v400_cant_existencia_1 / 1, 4)   
-                    end  
-                end   
-        end as decimal(28,4)) f_costo_prom_uni, 
-    v400_id_instalacion f_instalacion, 
-    case 
-        when 1 = 0 then 0   
-        else 
-            case when v400_cant_existencia_1 = 0 then f132_costo_prom_tot   
-                else f132_costo_prom_tot  
-            end  
-        end   f_costo_prom_tot, 
-    case 0   
-        when 0 then t120.f120_id_unidad_inventario   
-        when 1 then 
-            case when t120.f120_id_unidad_empaque is null then t120.f120_id_unidad_inventario    
-                else t120.f120_id_unidad_empaque 
-            end   
-            else t120.f120_id_unidad_inventario   
-    end f_um, 
-    v125_descripcion AS Marca
-    -- v400_origen f_origen, 
-    -- t121.f121_rowid_item f_rowid_item_cri, 
-    -- v400_rowid_item_ext f_rowid_item_ext, 
-    -- t120.f120_ind_tipo_item f_ind_tipo_item, 
-    -- v400_cant_existencia_1 f_cant_existencia, 
-    -- v400_cant_existencia_1 - v400_cant_salida_sin_conf_1 - v400_cant_comprometida_1 f_cant_disponible, 
-    -- case 0 when 0 then isnull((f1_precio_unitario - dbo.F_HALLAR_VLR_IMPTO_INCL(11,f1_id_lista_precios,f1_rowid_item_ext,f1_precio_unitario)),0)  else isnull(f132_costo_prom_uni,0) end f_divisor_margen, case when 1 = 0 then 0 else  isnull((f1_precio_unitario - dbo.F_HALLAR_VLR_IMPTO_INCL(11,f1_id_lista_precios,f1_rowid_item_ext,f1_precio_unitario)),0) - isnull(f132_costo_prom_uni,0) end f_utilidad, v400_id_instalacion f_id_instalacion 
-    from (
-        select 400 v400_origen,  
-        f400_id_cia  v400_id_cia,  
+DECLARE @codi_rev AS VARCHAR(20) = '{codi_rev}'
+-- DECLARE @data_ini AS VARCHAR(20) = '{data_ini}'
+-- DECLARE @data_fim AS VARCHAR(20) = '{data_fim}'
+
+
+
+SELECT DISTINCT TOP 100 --*,
+    t120.f120_id AS 'codi_pro',
+    -- RTRIM(t120.f120_referencia) AS Referencia, 
+    RTRIM(t120.f120_descripcion) AS 'desc_pro', 
+    ROUND(v400_cant_existencia_1 / 1, 4) AS 'qtde_pro', 
+    -- ROUND(v400_cant_comprometida_1 / 1, 4) AS 'Cant. Comprometida', 
+    ROUND(v400_cant_existencia_1 / 1, 4) 
+        - ROUND(v400_cant_salida_sin_conf_1 / 1, 4) 
+        - ROUND(v400_cant_comprometida_1 / 1, 4) AS 'qtdi_pro', 
+    -- CAST(
+    --     CASE 
+    --         WHEN 1 = 0 THEN 0   
+    --         ELSE 
+    --             CASE   
+    --                 WHEN 0 = 0 THEN f132_costo_prom_uni    
+    --                 ELSE 
+    --                     CASE 
+    --                         WHEN ROUND(v400_cant_existencia_1 / 1, 4) = 0 THEN 0   
+    --                         ELSE ROUND(f132_costo_prom_uni * v400_cant_existencia_1, 2) 
+    --                              / ROUND(v400_cant_existencia_1 / 1, 4)   
+    --                     END  
+    --             END   
+    --     END AS DECIMAL(28, 4)
+    -- ) AS 'Costo prom uni', 
+    v400_id_instalacion AS 'codi_rev', 
+    -- CASE 
+    --     WHEN 1 = 0 THEN 0   
+    --     ELSE 
+    --         CASE 
+    --             WHEN v400_cant_existencia_1 = 0 THEN f132_costo_prom_tot   
+    --             ELSE f132_costo_prom_tot  
+    --         END  
+    -- END AS 'Costo prom total', 
+    v125_descripcion AS Marca,
+    t120.f120_id_unidad_inventario AS 'unid_pro',
+    fecha AS 'data_pro'
+
+FROM (
+    SELECT 
+        400 v400_origen,  
         f400_rowid_item_ext v400_rowid_item_ext,  
         f400_id_instalacion v400_id_instalacion,  
-        sum(f400_cant_existencia_1) v400_cant_existencia_1,  
-        sum(f400_cant_salida_sin_conf_1) v400_cant_salida_sin_conf_1,  
-        sum(f400_cant_comprometida_1) v400_cant_comprometida_1,  
-        sum(f400_cant_pendiente_salir_1) 
-        v400_cant_pendiente_salir_1,  
-        sum(f400_cant_pendiente_entrar_1) v400_cant_pendiente_entrar_1,  
-        sum(f400_cant_existencia_2) v400_cant_existencia_2,  
-        sum(f400_cant_salida_sin_conf_2) v400_cant_salida_sin_conf_2,  
-        sum(f400_cant_comprometida_2) v400_cant_comprometida_2,  
-        sum(f400_cant_pendiente_salir_2) v400_cant_pendiente_salir_2,  
-        sum(f400_cant_existencia_1 - f400_cant_salida_sin_conf_1) v400_cant_existencia_actual,  
-        sum(f400_cant_existencia_1 - f400_cant_salida_sin_conf_1 - f400_cant_comprometida_1) v400_cant_disponible_1,  
-        sum(f400_cant_existencia_2 - f400_cant_salida_sin_conf_2) v400_cant_existencia_actual_2,  
-        sum(f400_cant_existencia_2 - f400_cant_salida_sin_conf_2 - f400_cant_comprometida_2) v400_cant_disponible_2,  
-        sum(f400_consumo_promedio) v400_consumo_promedio,  
-        sum(case when f400_consumo_promedio = 0 then 0 else f400_cant_existencia_1 / f400_consumo_promedio end) v400_existencias_dias  
-        from t400_cm_existencia  
-        where  f400_id_instalacion = '001' 
-        group by f400_id_cia,  
+        SUM(f400_cant_existencia_1) v400_cant_existencia_1,  
+        SUM(f400_cant_salida_sin_conf_1) v400_cant_salida_sin_conf_1,  
+        SUM(f400_cant_comprometida_1) v400_cant_comprometida_1,
+        f400_fecha_ult_salida fecha
+    FROM t400_cm_existencia  
+    WHERE f400_id_instalacion = @codi_rev
+    GROUP BY 
+        f400_id_cia,  
         f400_rowid_item_ext,  
-        f400_id_instalacion  
-        having  sum(f400_cant_existencia_1) <> 0  
-        and  sum(f400_cant_existencia_1 - f400_cant_salida_sin_conf_1 - f400_cant_comprometida_1) <> 0 ) v400  
-        inner join t121_mc_items_extensiones t121 on t121.f121_rowid = v400_rowid_item_ext 
-        inner join t120_mc_items t120 on t120.f120_rowid = t121.f121_rowid_item 
-        inner join t132_mc_items_instalacion on f132_rowid_item_ext = v400_rowid_item_ext   
-            and f132_id_instalacion = v400_id_instalacion 
-        inner join t101_mc_unidades_medida t101_um on t101_um.f101_id_cia = t120.f120_id_cia   
-            and t101_um.f101_id = f120_id_unidad_inventario   
+        f400_id_instalacion  ,
+        f400_fecha_ult_salida
+    HAVING  
+        SUM(f400_cant_existencia_1) <> 0  
+        AND SUM(f400_cant_existencia_1 - f400_cant_salida_sin_conf_1 - f400_cant_comprometida_1) <> 0 
+) v400  
+
+INNER JOIN t121_mc_items_extensiones t121 
+    ON t121.f121_rowid = v400_rowid_item_ext 
+
+INNER JOIN t120_mc_items t120 
+    ON t120.f120_rowid = t121.f121_rowid_item 
+
+INNER JOIN t132_mc_items_instalacion 
+    ON f132_rowid_item_ext = v400_rowid_item_ext   
+    AND f132_id_instalacion = v400_id_instalacion 
+
+INNER JOIN t101_mc_unidades_medida t101_um 
+    ON t101_um.f101_id_cia = t120.f120_id_cia   
+    AND t101_um.f101_id = f120_id_unidad_inventario   
+
+INNER JOIN t126_mc_items_precios t126 
+    ON t126.f126_rowid_item = t120.f120_rowid 
+    AND t126.f126_id_cia = t120.f120_id_cia -- Lista de precios por defecto
+
+INNER JOIN t112_mc_listas_precios t112 
+    ON t112.f112_id_cia = t126.f126_id_cia
+    AND t112.f112_id = t126.f126_id_lista_precio
+
+LEFT JOIN v125 
+    ON v125.v125_rowid_item = t120.f120_rowid  
+    AND v125_id_plan = '004'
+
+WHERE 
+    ROUND(v400_cant_existencia_1 / 1, 4) <> 0  
+    AND ROUND(v400_cant_existencia_1 / 1, 4) 
+        - ROUND(v400_cant_salida_sin_conf_1 / 1, 4) 
+        - ROUND(v400_cant_comprometida_1 / 1, 4) <> 0 
+    AND f112_descripcion LIKE 'CONTADO'
 
 
-        inner join t126_mc_items_precios t126 on t126.f126_rowid_item = t120.f120_rowid 
-            and t126.f126_id_cia = t120.f120_id_cia -- Lista de precios por defecto
-        inner join t112_mc_listas_precios t112 on t112.f112_id_cia = t126.f126_id_cia
-            and t112.f112_id = t126.f126_id_lista_precio
 
-        left join v125 on v125.v125_rowid_item = t120.f120_rowid  and v125_id_plan = '004'
-    where   round(v400_cant_existencia_1 / 1, 4) <> 0  
-    and round(v400_cant_existencia_1 / 1, 4) - round(v400_cant_salida_sin_conf_1 / 1,4) - round(v400_cant_comprometida_1 / 1,4) <> 0 
-    -- and f120_descripcion like 'ASTEROID X 100 ML DHARP'
-    and f112_descripcion like 'CONTADO'
--- order by f120_descripcion
-
--- select distinct top 100 *  from v125 where v125_rowid_item = 28470
-
--- exec sp_help 't125_mc_items_criterios'
-
-
--- SELECT top 500 * FROM t126_mc_items_precios t126
--- INNER JOIN t120_mc_items t120 ON t120.f120_rowid = t126.f126_rowid_item
--- INNER JOIN t112_mc_listas_precios t112 ON t112.f112_id_cia = t126.f126_id_cia
---     AND t112.f112_id = t126.f126_id_lista_precio
-
-
--- f126_id_cia, f126_id_lista_precio
--- REFERENCES UnoEE_AgCimarron_Real.dbo.t112_mc_listas_precios (f112_id_cia, f112_id)
-
--- f126_rowid_item
--- REFERENCES UnoEE_AgCimarron_Real.dbo.t120_mc_items (f120_rowid)
+-- Select 
+-- 1 as codi_rev,
+-- 1 as codi_pro,
+-- 1 as desc_pro,
+-- 1 as unid_pro,
+-- 1 as lote_pro,
+-- 1 as barr_pro,
+-- 1 as cind_pro,
+-- 1 as data_pro,
+-- 1 as dvlt_pro,
+-- 1 as qtde_pro,
+-- 1 as qtdi_pro
+-- from	   dbo.t400_cm_existencia t400
+-- inner join dbo.t121_mc_items_extensiones t121 on t400.f400_rowid_item_ext = t121.f121_rowid
+-- inner join dbo.t120_mc_items t120 on t121.f121_rowid_item = t120.f120_rowid
+-- inner join dbo.t150_mc_bodegas t150 on t400.f400_rowid_bodega = t150.f150_rowid
+-- where t400.f400_id_cia in (1)
